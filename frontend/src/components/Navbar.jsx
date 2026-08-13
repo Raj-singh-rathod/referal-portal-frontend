@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCheck, Shield, Briefcase, Bell, LogIn, LogOut, Sparkles, ChevronDown, HandHand } from 'lucide-react';
+import { UserCheck, Shield, Briefcase, Bell, LogIn, LogOut, Sparkles, ChevronDown } from 'lucide-react';
 
 export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAuth, onLogout, notifications = [], onMarkNotifRead }) {
   const [showNotifDrawer, setShowNotifDrawer] = useState(false);
