@@ -21,7 +21,7 @@ export default function LandingHero({ onSelectOption, currentUser }) {
           </h1>
 
           <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
-            Connect job seekers directly with verified company insiders & HRs at top tech companies. Skip the ATS black hole and get referred internally — completely free.
+            Connect job seekers directly with verified company insiders & HR recruiters at top companies. Skip the ATS black hole and get referred internally — completely free.
           </p>
 
           {/* TWO MAIN OPTIONS: GIVE REFERRAL & TAKE REFERRAL */}
@@ -36,16 +36,16 @@ export default function LandingHero({ onSelectOption, currentUser }) {
                 <Briefcase className="w-6 h-6 text-indigo-400" />
               </div>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 mb-2 inline-block">
-                For Insiders & HRs
+                For Company Insiders & HR
               </span>
               <h3 className="text-xl font-extrabold text-white group-hover:text-indigo-300 transition-colors">
                 Give Referral
               </h3>
               <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                Post internal job openings using AI JD parsing, view ranked candidate match scores, and refer candidates directly to ATS or via clipboard.
+                Post internal job openings with AI JD parsing, view pre-ranked candidate fit scores, and refer top talent to your ATS or referral portal.
               </p>
               <div className="mt-4 flex items-center space-x-2 text-xs font-bold text-indigo-400 group-hover:translate-x-1 transition-transform">
-                <span>Post Job & Screen Talent</span>
+                <span>Post Job & Screen Candidates</span>
                 <ArrowRight className="w-4 h-4" />
               </div>
             </div>
@@ -65,10 +65,10 @@ export default function LandingHero({ onSelectOption, currentUser }) {
                 Take Referral
               </h3>
               <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                Upload your resume, see your AI match score % for top company postings, and request free referrals from verified employees.
+                Upload your PDF resume, view your calculated match score % across active postings, and request free referrals from verified insiders.
               </p>
               <div className="mt-4 flex items-center space-x-2 text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
-                <span>Browse Postings & Apply</span>
+                <span>Browse Jobs & Apply</span>
                 <ArrowRight className="w-4 h-4" />
               </div>
             </div>
@@ -77,12 +77,12 @@ export default function LandingHero({ onSelectOption, currentUser }) {
         </div>
       </div>
 
-      {/* SECTION: Hum Kya Kar Rhe Hai (What We Do) */}
+      {/* SECTION: What We Do */}
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Hum Kya Kar Rahe Hain? (What We Do)</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">How ReferralConnect Works</h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-2">
-            ReferralConnect is a revolutionary free referral ecosystem eliminating paid job referral paywalls.
+            A free, automated referral ecosystem designed to eliminate paid paywalls and connect talent with insiders.
           </p>
         </div>
 
@@ -91,9 +91,9 @@ export default function LandingHero({ onSelectOption, currentUser }) {
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold">
               1
             </div>
-            <h4 className="text-base font-bold text-white">Verify Insiders & HRs</h4>
+            <h4 className="text-base font-bold text-white">Verified Insider Network</h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              We verify staff and HR employees from top companies (Stripe, Google, Meta) so job seekers interact with genuine internal referrers.
+              We verify staff members and HR recruiters from top companies (Stripe, Google, Meta) ensuring seekers connect with genuine internal referrers.
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export default function LandingHero({ onSelectOption, currentUser }) {
             </div>
             <h4 className="text-base font-bold text-white">AI JD & Resume Matching</h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Our AI engine extracts structured skills and calculates a 0-100% fit score between job seekers and job descriptions.
+              Our intelligent engine parses candidate resumes against job descriptions, calculating an accurate 0–100% fit score automatically.
             </p>
           </div>
 
@@ -111,22 +111,22 @@ export default function LandingHero({ onSelectOption, currentUser }) {
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
               3
             </div>
-            <h4 className="text-base font-bold text-white">Automated ATS & Status Sync</h4>
+            <h4 className="text-base font-bold text-white">Automated ATS & Status Tracking</h4>
             <p className="text-xs text-slate-300 leading-relaxed">
-              One-click candidate referral directly pushes candidates into Greenhouse/Lever ATS or copies candidate data for referral portals.
+              One-click referral submission directly integrates into Greenhouse or Lever ATS with real-time candidate status updates.
             </p>
           </div>
         </div>
       </div>
 
-      {/* SECTION: Benefits / Profits of finding jobs through ReferralConnect */}
+      {/* SECTION: Benefits of Finding Jobs Through ReferralConnect */}
       <div className="max-w-6xl mx-auto px-4 glass-card rounded-3xl p-8 sm:p-10 border border-slate-800">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-            Candidate & HR Benefits
+            Key Advantages & Benefits
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-3">
-            Is Platform Ke Through Job Dhundhne Aur Refer Karne Ke Profits
+            Why Job Seekers & HR Recruiters Choose ReferralConnect
           </h2>
         </div>
 
@@ -135,7 +135,7 @@ export default function LandingHero({ onSelectOption, currentUser }) {
             <ShieldCheck className="w-6 h-6 text-emerald-400 mb-2" />
             <h4 className="text-sm font-bold text-white">100% Free Forever</h4>
             <p className="text-xs text-slate-400">
-              No hidden monthly fees, request limits, or paywall barriers like Refer.me or ReferralHub.
+              No hidden fees, monthly subscriptions, or request caps like paid competitors.
             </p>
           </div>
 
@@ -143,23 +143,23 @@ export default function LandingHero({ onSelectOption, currentUser }) {
             <TrendingUp className="w-6 h-6 text-indigo-400 mb-2" />
             <h4 className="text-sm font-bold text-white">4x Higher Interview Rate</h4>
             <p className="text-xs text-slate-400">
-              Internal employee referrals get prioritized by recruiting teams over cold ATS applications.
+              Internal referrals are prioritized by recruiters over generic ATS applications.
             </p>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
             <Cpu className="w-6 h-6 text-purple-400 mb-2" />
-            <h4 className="text-sm font-bold text-white">AI Candidate Screening For HRs</h4>
+            <h4 className="text-sm font-bold text-white">AI Candidate Screening for HR</h4>
             <p className="text-xs text-slate-400">
-              HRs & Employees don't waste time manually reading resumes — AI ranks candidates by exact skill overlap %!
+              HR recruiters save hundreds of manual review hours — candidates are pre-ranked by exact JD skill overlap %.
             </p>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
             <FileCheck className="w-6 h-6 text-amber-400 mb-2" />
-            <h4 className="text-sm font-bold text-white">Live Application Tracking</h4>
+            <h4 className="text-sm font-bold text-white">Real-Time Application Status</h4>
             <p className="text-xs text-slate-400">
-              Track status from Applied ➔ Under Review ➔ Referred ➔ Interview ➔ Hired in real-time.
+              Track your referral journey from Applied ➔ Under Review ➔ Referred ➔ Interview ➔ Hired.
             </p>
           </div>
         </div>

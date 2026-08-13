@@ -8,10 +8,14 @@ const { JWT_SECRET, requireAuth } = require('../middleware/auth');
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role, companyId, jobTitle, department, headline, bio } = req.body;
+    const { name, email, password, role, phone, companyId, jobTitle, department, headline, bio, location } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ error: 'Missing required fields: name, email, password, role.' });
+    }
+
+    if (role === 'job_seeker' && !phone) {
+      return res.status(400).json({ error: 'Phone number is required for Job Seeker registration.' });
     }
 
     const existingUser = await db.getOne('SELECT * FROM users WHERE email = $1', [email]);
@@ -24,8 +28,8 @@ router.post('/register', async (req, res) => {
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
 
     await db.query(
-      `INSERT INTO users (id, email, password_hash, name, role, avatar_url) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userId, email, passwordHash, name, role, avatarUrl]
+      `INSERT INTO users (id, email, password_hash, name, phone, role, avatar_url) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, email, passwordHash, name, phone || '', role, avatarUrl]
     );
 
     let employeeId = null;
@@ -36,7 +40,6 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ error: 'Employee registration requires selecting a company.' });
       }
       employeeId = `emp_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-      // Check company verification status (manual approval needed)
       await db.query(
         `INSERT INTO employees (id, user_id, company_id, job_title, department, verification_status) VALUES ($1, $2, $3, $4, $5, $6)`,
         [employeeId, userId, companyId, jobTitle || 'Staff Member', department || 'Engineering', 'pending']
@@ -44,15 +47,15 @@ router.post('/register', async (req, res) => {
     } else if (role === 'job_seeker') {
       seekerId = `seeker_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       const defaultParsed = JSON.stringify({
-        skills: ['JavaScript', 'React', 'Node.js'],
+        skills: ['React', 'Node.js', 'TypeScript'],
         experience_years: 2,
         education: 'B.S. Computer Science',
-        summary: bio || 'Ambitious developer looking for referrals.'
+        summary: bio || 'Ambitious software professional looking for referrals.'
       });
 
       await db.query(
-        `INSERT INTO job_seekers (id, user_id, headline, bio, resume_url, parsed_profile) VALUES ($1, $2, $3, $4, $5, $6)`,
-        [seekerId, userId, headline || 'Software Engineer', bio || '', '', defaultParsed]
+        `INSERT INTO job_seekers (id, user_id, headline, bio, phone, location, resume_url, parsed_profile) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [seekerId, userId, headline || 'Software Engineer', bio || '', phone || '', location || 'Remote', '', defaultParsed]
       );
     }
 
@@ -68,6 +71,7 @@ router.post('/register', async (req, res) => {
         id: userId,
         email,
         name,
+        phone: phone || '',
         role,
         avatar_url: avatarUrl,
         employeeId,
@@ -121,6 +125,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        phone: user.phone || '',
         role: user.role,
         avatar_url: user.avatar_url,
         employeeId,
@@ -136,7 +141,7 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const user = await db.getOne('SELECT id, email, name, role, avatar_url FROM users WHERE id = $1', [req.user.id]);
+    const user = await db.getOne('SELECT id, email, name, phone, role, avatar_url FROM users WHERE id = $1', [req.user.id]);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     let employeeData = null;

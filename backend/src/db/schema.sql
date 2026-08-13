@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
     role VARCHAR(50) NOT NULL CHECK (role IN ('job_seeker', 'employee', 'admin')),
     avatar_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -36,6 +37,8 @@ CREATE TABLE IF NOT EXISTS job_seekers (
     user_id VARCHAR(36) UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     headline VARCHAR(255),
     bio TEXT,
+    phone VARCHAR(50),
+    location VARCHAR(255),
     resume_url TEXT,
     parsed_profile TEXT, -- JSON string containing skills, experience_years, education, work_summary
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

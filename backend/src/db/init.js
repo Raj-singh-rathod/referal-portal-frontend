@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const initDb = async () => {
   console.log('Initializing database schema and seed data...');
 
-  // Create tables if using SQLite (Postgres runs schema.sql via Docker entrypoint or script)
   if (db.type === 'sqlite') {
     db.sqlite.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -12,6 +11,7 @@ const initDb = async () => {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         name TEXT NOT NULL,
+        phone TEXT,
         role TEXT NOT NULL,
         avatar_url TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -43,6 +43,8 @@ const initDb = async () => {
         user_id TEXT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         headline TEXT,
         bio TEXT,
+        phone TEXT,
+        location TEXT,
         resume_url TEXT,
         parsed_profile TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -149,6 +151,7 @@ const initDb = async () => {
       email: 'admin@referalportal.com',
       password_hash: passwordHash,
       name: 'Elena Rostova (Admin)',
+      phone: '+1 555-0190',
       role: 'admin',
       avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
     },
@@ -157,6 +160,7 @@ const initDb = async () => {
       email: 'alex.chen@stripe.com',
       password_hash: passwordHash,
       name: 'Alex Chen',
+      phone: '+1 555-0144',
       role: 'employee',
       avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
     },
@@ -165,6 +169,7 @@ const initDb = async () => {
       email: 'sarah.jenkins@google.com',
       password_hash: passwordHash,
       name: 'Sarah Jenkins',
+      phone: '+1 555-0188',
       role: 'employee',
       avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
     },
@@ -173,6 +178,7 @@ const initDb = async () => {
       email: 'marcus.vance@meta.com',
       password_hash: passwordHash,
       name: 'Marcus Vance',
+      phone: '+1 555-0133',
       role: 'employee',
       avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'
     },
@@ -181,6 +187,7 @@ const initDb = async () => {
       email: 'david.kim@gmail.com',
       password_hash: passwordHash,
       name: 'David Kim',
+      phone: '+1 555-0199',
       role: 'job_seeker',
       avatar_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80'
     },
@@ -189,6 +196,7 @@ const initDb = async () => {
       email: 'priya.sharma@gmail.com',
       password_hash: passwordHash,
       name: 'Priya Sharma',
+      phone: '+1 555-0122',
       role: 'job_seeker',
       avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
     }
@@ -196,8 +204,8 @@ const initDb = async () => {
 
   for (const u of users) {
     await db.query(
-      `INSERT INTO users (id, email, password_hash, name, role, avatar_url) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [u.id, u.email, u.password_hash, u.name, u.role, u.avatar_url]
+      `INSERT INTO users (id, email, password_hash, name, phone, role, avatar_url) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [u.id, u.email, u.password_hash, u.name, u.phone, u.role, u.avatar_url]
     );
   }
 
@@ -216,8 +224,8 @@ const initDb = async () => {
       id: 'emp_google1',
       user_id: 'user_emp2',
       company_id: 'comp_google',
-      job_title: 'Senior Product Manager',
-      department: 'Cloud Infrastructure',
+      job_title: 'Senior Product Manager / Technical Recruiter',
+      department: 'Cloud Infrastructure & HR',
       verification_status: 'verified',
       verified_at: new Date().toISOString()
     },
@@ -245,7 +253,9 @@ const initDb = async () => {
       id: 'seeker_1',
       user_id: 'user_seeker1',
       headline: 'Senior Full Stack Engineer | React, Node.js, TypeScript, PostgreSQL',
-      bio: 'Full stack developer with 5+ years of experience building high-throughput web applications and payment systems.',
+      bio: 'Full stack developer with 5+ years of experience building high-throughput web applications.',
+      phone: '+1 555-0199',
+      location: 'San Francisco, CA',
       resume_url: '/demo-resumes/david_kim_resume.pdf',
       parsed_profile: JSON.stringify({
         skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Express', 'Redis', 'Docker', 'GraphQL', 'AWS'],
@@ -258,7 +268,9 @@ const initDb = async () => {
       id: 'seeker_2',
       user_id: 'user_seeker2',
       headline: 'Product Manager | AI Products & SaaS Platforms',
-      bio: 'Data-driven Product Manager with 4 years leading cross-functional teams in cloud software & machine learning applications.',
+      bio: 'Data-driven Product Manager with 4 years leading cross-functional teams in cloud software.',
+      phone: '+1 555-0122',
+      location: 'New York, NY',
       resume_url: '/demo-resumes/priya_sharma_resume.pdf',
       parsed_profile: JSON.stringify({
         skills: ['Product Strategy', 'Agile / Scrum', 'SQL', 'A/B Testing', 'User Research', 'Product Analytics', 'Roadmapping', 'Python'],
@@ -271,8 +283,8 @@ const initDb = async () => {
 
   for (const js of jobSeekers) {
     await db.query(
-      `INSERT INTO job_seekers (id, user_id, headline, bio, resume_url, parsed_profile) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [js.id, js.user_id, js.headline, js.bio, js.resume_url, js.parsed_profile]
+      `INSERT INTO job_seekers (id, user_id, headline, bio, phone, location, resume_url, parsed_profile) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [js.id, js.user_id, js.headline, js.bio, js.phone, js.location, js.resume_url, js.parsed_profile]
     );
   }
 

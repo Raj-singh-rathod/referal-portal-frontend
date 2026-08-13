@@ -20,17 +20,6 @@ services:
     ports:
       - "6379:6379"
 
-  # Optional: Ollama LLM Container (Commented out to save ~3GB EC2 disk space)
-  # Un-comment if you have 15GB+ EBS volume and GPU/CPU resources
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   container_name: referal_ollama
-  #   restart: always
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-
   backend:
     build:
       context: ./backend
@@ -58,10 +47,9 @@ services:
     container_name: referal_frontend
     restart: always
     ports:
-      - "80:80"
+      - "3000:80"
     depends_on:
       - backend
 
 volumes:
   postgres_data:
-  # ollama_data:

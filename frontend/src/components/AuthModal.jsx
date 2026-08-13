@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogIn, UserPlus, Building2, User, Sparkles, X, Briefcase, UserCheck } from 'lucide-react';
+import { LogIn, UserPlus, Building2, User, Sparkles, X, Briefcase, UserCheck, Phone } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initialRole = 'job_seeker', companies = [] }) {
   const [isLoginTab, setIsLoginTab] = useState(true);
@@ -7,6 +7,8 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('Remote');
   const [companyId, setCompanyId] = useState(companies[0]?.id || 'comp_stripe');
   const [jobTitle, setJobTitle] = useState('Senior Software Engineer / HR');
   const [department, setDepartment] = useState('Engineering / Recruitment');
@@ -31,6 +33,8 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
           email,
           password,
           role,
+          phone,
+          location,
           companyId,
           jobTitle,
           department,
@@ -141,6 +145,22 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
             />
           </div>
 
+          {!isLoginTab && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Phone Number <span className="text-emerald-400">*</span>
+              </label>
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 (555) 019-2834"
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs text-white"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
             <input
@@ -170,7 +190,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Your Job Title at Company (HR or Insider Role)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Your Job Title (HR or Insider Role)</label>
                 <input
                   type="text"
                   value={jobTitle}
