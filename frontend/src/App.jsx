@@ -1,0 +1,429 @@
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import SeekerFeed from './components/SeekerFeed';
+import SeekerProfile from './components/SeekerProfile';
+import SeekerTracker from './components/SeekerTracker';
+import EmployeeDashboard from './components/EmployeeDashboard';
+import JdPasteParserModal from './components/JdPasteParserModal';
+import AtsSettingsModal from './components/AtsSettingsModal';
+import AdminPortal from './components/AdminPortal';
+import AuthModal from './components/AuthModal';
+import { UserCheck, Sparkles, AlertCircle } from 'lucide-react';
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('feed');
+  const [feedItems, setFeedItems] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [dashboardItems, setDashboardItems] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [seekerProfile, setSeekerProfile] = useState(null);
+  const [companies, setCompanies] = useState([]);
+
+  // Modals
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showJdModal, setShowJdModal] = useState(false);
+  const [showAtsModal, setShowAtsModal] = useState(false);
+
+  // Initial load
+  useEffect(() => {
+    fetchFeed();
+    fetchCompanies();
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchNotifications();
+      if (currentUser.role === 'job_seeker') {
+        fetchMyRequests();
+        fetchSeekerProfile();
+      } else if (currentUser.role === 'employee' || currentUser.role === 'admin') {
+        fetchEmployeeDashboard();
+      }
+    }
+  }, [currentUser]);
+
+  const checkAuth = async () => {
+    const token = localStorage.getItem('referal_token');
+    if (!token) return;
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data.user);
+        if (data.seeker) setSeekerProfile(data.seeker);
+      }
+    } catch (e) {}
+  };
+
+  const fetchFeed = async () => {
+    try {
+      const token = localStorage.getItem('referal_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch('/api/referrals/feed', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setFeedItems(data);
+      }
+    } catch (e) {}
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const res = await fetch('/api/admin/companies');
+      if (res.ok) {
+        const data = await res.json();
+        setCompanies(data);
+      }
+    } catch (e) {}
+  };
+
+  const fetchMyRequests = async () => {
+    try {
+      const token = localStorage.getItem('referal_token');
+      const res = await fetch('/api/referrals/my-requests', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMyRequests(data);
+      }
+    } catch (e) {}
+  };
+
+  const fetchEmployeeDashboard = async () => {
+    try {
+      const token = localStorage.getItem('referal_token');
+      const res = await fetch('/api/referrals/employee-dashboard', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDashboardItems(data);
+      }
+    } catch (e) {}
+  };
+
+  const fetchSeekerProfile = async () => {
+    try {
+      const token = localStorage.getItem('referal_token');
+      const res = await fetch('/api/seekers/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSeekerProfile(data);
+      }
+    } catch (e) {}
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('referal_token');
+      const res = await fetch('/api/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch (e) {}
+  };
+
+  // Quick Demo Role Switcher Helper
+  const handleQuickSwitchRole = async (email) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: 'password123' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('referal_token', data.token);
+        setCurrentUser(data.user);
+        if (data.user.role === 'job_seeker') setActiveTab('feed');
+        else if (data.user.role === 'employee') setActiveTab('employee_dashboard');
+        else if (data.user.role === 'admin') setActiveTab('admin_portal');
+        fetchFeed();
+      }
+    } catch (e) {
+      alert('Quick switch failed: ' + e.message);
+    }
+  };
+
+  const handleLogin = async ({ email, password }) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    localStorage.setItem('referal_token', data.token);
+    setCurrentUser(data.user);
+    fetchFeed();
+  };
+
+  const handleRegister = async (formPayload) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formPayload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    localStorage.setItem('referal_token', data.token);
+    setCurrentUser(data.user);
+    fetchFeed();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('referal_token');
+    setCurrentUser(null);
+    setActiveTab('feed');
+  };
+
+  // Seeker actions
+  const handleRequestReferral = async (jobPostingId) => {
+    const token = localStorage.getItem('referal_token');
+    const res = await fetch('/api/referrals/request', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ jobPostingId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    fetchFeed();
+    fetchMyRequests();
+    fetchNotifications();
+    return data;
+  };
+
+  const handleUploadResume = async (resumeText) => {
+    const token = localStorage.getItem('referal_token');
+    const res = await fetch('/api/seekers/resume', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ resumeText })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    fetchSeekerProfile();
+    return data;
+  };
+
+  // Employee actions
+  const handleParseJd = async (rawJdText) => {
+    const token = localStorage.getItem('referal_token');
+    const res = await fetch('/api/jobs/parse-jd', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ rawJdText })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Parse failed');
+    return data;
+  };
+
+  const handlePublishPosting = async (postingPayload) => {
+    const token = localStorage.getItem('referal_token');
+    const res = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(postingPayload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Publish failed');
+    fetchFeed();
+    fetchEmployeeDashboard();
+    return data;
+  };
+
+  const handleReferCandidate = async (requestId) => {
+    const token = localStorage.getItem('referal_token');
+    const res = await fetch(`/api/referrals/${requestId}/refer`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Refer action failed');
+    fetchEmployeeDashboard();
+    return data;
+  };
+
+  const handleUpdateStatus = async (requestId, status) => {
+    const token = localStorage.getItem('referal_token');
+    const res = await fetch(`/api/referrals/${requestId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    });
+    if (res.ok) {
+      fetchEmployeeDashboard();
+    }
+  };
+
+  const handleSaveAtsSettings = async (settings) => {
+    const token = localStorage.getItem('referal_token');
+    const companyId = currentUser?.employeeId ? 'comp_stripe' : 'comp_stripe';
+    const res = await fetch(`/api/admin/companies/${companyId}/ats`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(settings)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update ATS settings');
+    return data;
+  };
+
+  const handleMarkNotifRead = async (notifId) => {
+    const token = localStorage.getItem('referal_token');
+    await fetch(`/api/notifications/${notifId}/read`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchNotifications();
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      
+      {/* Quick Demo Switcher Bar */}
+      <div className="bg-slate-900 border-b border-slate-800 py-2 px-4 text-xs">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center space-x-2 text-indigo-400 font-semibold">
+            <UserCheck className="w-4 h-4 text-emerald-400" />
+            <span>Instant Role Switcher (Development Testing):</span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handleQuickSwitchRole('david.kim@gmail.com')}
+              className="px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold"
+            >
+              Job Seeker (David Kim)
+            </button>
+            <button
+              onClick={() => handleQuickSwitchRole('alex.chen@stripe.com')}
+              className="px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold"
+            >
+              Stripe Insider (Alex Chen)
+            </button>
+            <button
+              onClick={() => handleQuickSwitchRole('sarah.jenkins@google.com')}
+              className="px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold"
+            >
+              Google Insider (Sarah Jenkins)
+            </button>
+            <button
+              onClick={() => handleQuickSwitchRole('admin@referalportal.com')}
+              className="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-semibold"
+            >
+              Admin (Elena)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navbar */}
+      <Navbar
+        currentUser={currentUser}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenAuth={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
+        notifications={notifications}
+        onMarkNotifRead={handleMarkNotifRead}
+      />
+
+      {/* Dynamic Tab Content */}
+      <main className="flex-1">
+        {activeTab === 'feed' && (
+          <SeekerFeed
+            feedItems={feedItems}
+            currentUser={currentUser}
+            onRequestReferral={handleRequestReferral}
+          />
+        )}
+
+        {activeTab === 'seeker_profile' && (
+          <SeekerProfile
+            seekerProfile={seekerProfile}
+            onUploadResume={handleUploadResume}
+          />
+        )}
+
+        {activeTab === 'seeker_tracker' && (
+          <SeekerTracker
+            myRequests={myRequests}
+          />
+        )}
+
+        {activeTab === 'employee_dashboard' && (
+          <EmployeeDashboard
+            dashboardItems={dashboardItems}
+            onOpenJdModal={() => setShowJdModal(true)}
+            onOpenAtsSettings={() => setShowAtsModal(true)}
+            onReferCandidate={handleReferCandidate}
+            onUpdateStatus={handleUpdateStatus}
+          />
+        )}
+
+        {activeTab === 'admin_portal' && (
+          <AdminPortal />
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 py-8 text-center text-xs text-slate-500 mt-12 glass-card">
+        <p>© 2026 ReferralConnect — Completely Free Employee Referral Matching Platform.</p>
+        <p className="mt-1">Zero Paywalls for Seekers or Insiders • Greenhouse & Lever ATS Enabled</p>
+      </footer>
+
+      {/* Modals */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        companies={companies}
+      />
+
+      <JdPasteParserModal
+        isOpen={showJdModal}
+        onClose={() => setShowJdModal(false)}
+        onParseJd={handleParseJd}
+        onPublishPosting={handlePublishPosting}
+      />
+
+      <AtsSettingsModal
+        isOpen={showAtsModal}
+        onClose={() => setShowAtsModal(false)}
+        onSaveAtsSettings={handleSaveAtsSettings}
+      />
+
+    </div>
+  );
+}

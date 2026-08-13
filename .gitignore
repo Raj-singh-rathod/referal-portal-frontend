@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build & Dist
+dist/
+**/dist/
+build/
+*.log
+
+# Database & Environment
+*.db
+backend/src/db/referal.db
+.env
+.env.local
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
