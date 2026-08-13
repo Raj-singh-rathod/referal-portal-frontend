@@ -13,7 +13,7 @@ import { UserCheck, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('landing'); // 'landing', 'feed', 'seeker_profile', 'seeker_tracker', 'employee_dashboard', 'admin_portal'
+  const [activeTab, setActiveTab] = useState('landing');
   const [feedItems, setFeedItems] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [dashboardItems, setDashboardItems] = useState([]);
@@ -216,10 +216,31 @@ export default function App() {
     setActiveTab('landing');
   };
 
-  // Seeker actions
-  const handleRequestReferral = async (jobPostingId) => {
+  // Submit Application modal action (Save profile details & Submit request)
+  const handleSubmitApplication = async ({ jobPostingId, name, phone, location, experience_years, resumeFile }) => {
     const token = localStorage.getItem('referal_token');
-    const res = await fetch('/api/referrals/request', {
+    
+    // Step 1: Upload PDF Resume & update profile details if provided
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('phone', phone);
+    formData.append('location', location);
+    formData.append('experience_years', experience_years);
+    if (resumeFile) {
+      formData.append('resume', resumeFile);
+    }
+
+    const updateRes = await fetch('/api/seekers/resume', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+
+    const updateData = await updateRes.json();
+    if (!updateRes.ok) throw new Error(updateData.error || 'Failed to process resume');
+
+    // Step 2: Submit referral request to insider
+    const reqRes = await fetch('/api/referrals/request', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -227,28 +248,17 @@ export default function App() {
       },
       body: JSON.stringify({ jobPostingId })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+
+    const reqData = await reqRes.json();
+    if (!reqRes.ok) throw new Error(reqData.error || 'Failed to submit referral request');
+
+    alert('Free Referral Request & PDF resume submitted successfully!');
+
     fetchFeed();
     fetchMyRequests();
     fetchNotifications();
-    return data;
-  };
-
-  const handleUploadResume = async (resumeText) => {
-    const token = localStorage.getItem('referal_token');
-    const res = await fetch('/api/seekers/resume', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ resumeText })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Upload failed');
     fetchSeekerProfile();
-    return data;
+    return reqData;
   };
 
   // Employee actions
@@ -400,14 +410,15 @@ export default function App() {
           <SeekerFeed
             feedItems={feedItems}
             currentUser={currentUser}
-            onRequestReferral={handleRequestReferral}
+            seekerProfile={seekerProfile}
+            onSubmitApplication={handleSubmitApplication}
           />
         )}
 
         {activeTab === 'seeker_profile' && (
           <SeekerProfile
             seekerProfile={seekerProfile}
-            onUploadResume={handleUploadResume}
+            onUploadResume={handleSubmitApplication}
           />
         )}
 

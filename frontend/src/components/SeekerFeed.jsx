@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Sparkles, Building2, MapPin, Briefcase, CheckCircle, ArrowRight, ShieldCheck, Zap, Star } from 'lucide-react';
+import ApplicationModal from './ApplicationModal';
 
-export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, onRequestSuccess }) {
-  const [loadingId, setLoadingId] = useState(null);
+export default function SeekerFeed({ feedItems, currentUser, seekerProfile, onRequestReferral, onSubmitApplication }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [companyFilter, setCompanyFilter] = useState('ALL');
+  const [selectedPosting, setSelectedPosting] = useState(null);
 
   const filteredItems = feedItems.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -16,7 +17,7 @@ export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, 
 
   const companiesList = Array.from(new Set(feedItems.map(i => i.company.name)));
 
-  const handleRequest = async (item) => {
+  const handleRequestClick = (item) => {
     if (!currentUser) {
       alert('Please sign in or register as a Job Seeker to request free referrals!');
       return;
@@ -26,14 +27,8 @@ export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, 
       return;
     }
 
-    setLoadingId(item.id);
-    try {
-      await onRequestReferral(item.posting_id);
-    } catch (err) {
-      alert(err.message || 'Error requesting referral');
-    } finally {
-      setLoadingId(null);
-    }
+    // Open Application Modal to let user enter/confirm details & PDF resume
+    setSelectedPosting(item);
   };
 
   return (
@@ -84,7 +79,7 @@ export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, 
         </div>
       </div>
 
-      {/* Referral Cards Feed (Refer.me style) */}
+      {/* Referral Cards Feed */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => {
           const match = item.match_score || 80;
@@ -95,7 +90,7 @@ export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, 
               key={item.id}
               className="glass-card glass-card-hover rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden border border-slate-800"
             >
-              {/* Top Row: Insider Badge + Match % Circular/Badge */}
+              {/* Top Row: Insider Badge + Match % Badge */}
               <div>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
@@ -185,17 +180,15 @@ export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, 
                 </span>
 
                 <button
-                  disabled={isRequested || loadingId === item.id}
-                  onClick={() => handleRequest(item)}
+                  disabled={isRequested}
+                  onClick={() => handleRequestClick(item)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
                     isRequested
                       ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
                       : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:scale-105'
                   }`}
                 >
-                  {loadingId === item.id ? (
-                    <span>Submitting...</span>
-                  ) : isRequested ? (
+                  {isRequested ? (
                     <>
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="capitalize">{item.request_status}</span>
@@ -213,6 +206,16 @@ export default function SeekerFeed({ feedItems, currentUser, onRequestReferral, 
           );
         })}
       </div>
+
+      {/* Application Modal */}
+      <ApplicationModal
+        isOpen={!!selectedPosting}
+        onClose={() => setSelectedPosting(null)}
+        posting={selectedPosting}
+        currentUser={currentUser}
+        seekerProfile={seekerProfile}
+        onSubmitApplication={onSubmitApplication}
+      />
 
     </div>
   );
