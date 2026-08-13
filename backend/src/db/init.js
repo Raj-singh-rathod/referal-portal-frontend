@@ -21,9 +21,16 @@ const initDb = async () => {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         domain TEXT UNIQUE NOT NULL,
+        portal_url TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS company_ats_configs (
+        id TEXT PRIMARY KEY,
+        company_id TEXT UNIQUE NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
         ats_type TEXT DEFAULT 'none',
         ats_api_key_encrypted TEXT,
-        portal_url TEXT,
+        rate_limit_per_min INTEGER DEFAULT 100,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -43,11 +50,22 @@ const initDb = async () => {
         user_id TEXT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         headline TEXT,
         bio TEXT,
-        phone TEXT,
-        location TEXT,
+        phone TEXT NOT NULL,
+        location TEXT NOT NULL,
+        total_experience_years INTEGER DEFAULT 0,
         resume_url TEXT,
         parsed_profile TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS candidate_resumes (
+        id TEXT PRIMARY KEY,
+        seeker_id TEXT NOT NULL REFERENCES job_seekers(id) ON DELETE CASCADE,
+        file_name TEXT NOT NULL,
+        file_size_bytes INTEGER NOT NULL,
+        mime_type TEXT NOT NULL,
+        storage_path TEXT NOT NULL,
+        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS job_postings (
@@ -99,18 +117,11 @@ const initDb = async () => {
     `);
   }
 
-  // Automatic Migration for existing Postgres/SQLite databases
-  try {
-    await db.query(`ALTER TABLE users ADD COLUMN phone VARCHAR(50);`);
-  } catch (e) {}
-
-  try {
-    await db.query(`ALTER TABLE job_seekers ADD COLUMN phone VARCHAR(50);`);
-  } catch (e) {}
-
-  try {
-    await db.query(`ALTER TABLE job_seekers ADD COLUMN location VARCHAR(255);`);
-  } catch (e) {}
+  // Automatic Migration for existing PostgreSQL or SQLite databases
+  try { await db.query(`ALTER TABLE users ADD COLUMN phone VARCHAR(50);`); } catch (e) {}
+  try { await db.query(`ALTER TABLE job_seekers ADD COLUMN phone VARCHAR(50);`); } catch (e) {}
+  try { await db.query(`ALTER TABLE job_seekers ADD COLUMN location VARCHAR(255);`); } catch (e) {}
+  try { await db.query(`ALTER TABLE job_seekers ADD COLUMN total_experience_years INT DEFAULT 0;`); } catch (e) {}
 
   // Check if seed data exists
   const existingUsers = await db.getAll('SELECT * FROM users LIMIT 1');
@@ -128,36 +139,44 @@ const initDb = async () => {
       id: 'comp_stripe',
       name: 'Stripe',
       domain: 'stripe.com',
-      ats_type: 'greenhouse',
-      ats_api_key_encrypted: 'demo_encrypted_key_stripe_gh',
       portal_url: 'https://stripe.com/jobs/referral'
     },
     {
       id: 'comp_google',
       name: 'Google',
       domain: 'google.com',
-      ats_type: 'lever',
-      ats_api_key_encrypted: 'demo_encrypted_key_google_lever',
       portal_url: 'https://careers.google.com'
     },
     {
       id: 'comp_meta',
       name: 'Meta',
       domain: 'meta.com',
-      ats_type: 'none',
-      ats_api_key_encrypted: null,
       portal_url: 'https://www.metacareers.com/refer'
     }
   ];
 
   for (const c of companies) {
     await db.query(
-      `INSERT INTO companies (id, name, domain, ats_type, ats_api_key_encrypted, portal_url) VALUES ($1, $2, $3, $4, $5, $6)`,
-      [c.id, c.name, c.domain, c.ats_type, c.ats_api_key_encrypted, c.portal_url]
+      `INSERT INTO companies (id, name, domain, portal_url) VALUES ($1, $2, $3, $4)`,
+      [c.id, c.name, c.domain, c.portal_url]
     );
   }
 
-  // 2. Seed Users
+  // 2. Seed ATS Configs
+  const atsConfigs = [
+    { id: 'ats_stripe', company_id: 'comp_stripe', ats_type: 'greenhouse', ats_api_key_encrypted: 'demo_encrypted_key_stripe_gh', rate_limit_per_min: 100 },
+    { id: 'ats_google', company_id: 'comp_google', ats_type: 'lever', ats_api_key_encrypted: 'demo_encrypted_key_google_lever', rate_limit_per_min: 100 },
+    { id: 'ats_meta', company_id: 'comp_meta', ats_type: 'none', ats_api_key_encrypted: null, rate_limit_per_min: 60 }
+  ];
+
+  for (const ac of atsConfigs) {
+    await db.query(
+      `INSERT INTO company_ats_configs (id, company_id, ats_type, ats_api_key_encrypted, rate_limit_per_min) VALUES ($1, $2, $3, $4, $5)`,
+      [ac.id, ac.company_id, ac.ats_type, ac.ats_api_key_encrypted, ac.rate_limit_per_min]
+    );
+  }
+
+  // 3. Seed Users
   const users = [
     {
       id: 'user_admin',
@@ -222,7 +241,7 @@ const initDb = async () => {
     );
   }
 
-  // 3. Seed Employees
+  // 4. Seed Employees
   const employees = [
     {
       id: 'emp_stripe1',
@@ -260,7 +279,7 @@ const initDb = async () => {
     );
   }
 
-  // 4. Seed Job Seekers
+  // 5. Seed Job Seekers
   const jobSeekers = [
     {
       id: 'seeker_1',
@@ -269,6 +288,7 @@ const initDb = async () => {
       bio: 'Full stack developer with 5+ years of experience building high-throughput web applications.',
       phone: '+1 555-0199',
       location: 'San Francisco, CA',
+      total_experience_years: 5,
       resume_url: '/demo-resumes/david_kim_resume.pdf',
       parsed_profile: JSON.stringify({
         skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Express', 'Redis', 'Docker', 'GraphQL', 'AWS'],
@@ -284,6 +304,7 @@ const initDb = async () => {
       bio: 'Data-driven Product Manager with 4 years leading cross-functional teams in cloud software.',
       phone: '+1 555-0122',
       location: 'New York, NY',
+      total_experience_years: 4,
       resume_url: '/demo-resumes/priya_sharma_resume.pdf',
       parsed_profile: JSON.stringify({
         skills: ['Product Strategy', 'Agile / Scrum', 'SQL', 'A/B Testing', 'User Research', 'Product Analytics', 'Roadmapping', 'Python'],
@@ -296,12 +317,18 @@ const initDb = async () => {
 
   for (const js of jobSeekers) {
     await db.query(
-      `INSERT INTO job_seekers (id, user_id, headline, bio, phone, location, resume_url, parsed_profile) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [js.id, js.user_id, js.headline, js.bio, js.phone, js.location, js.resume_url, js.parsed_profile]
+      `INSERT INTO job_seekers (id, user_id, headline, bio, phone, location, total_experience_years, resume_url, parsed_profile) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [js.id, js.user_id, js.headline, js.bio, js.phone, js.location, js.total_experience_years, js.resume_url, js.parsed_profile]
+    );
+
+    // Seed candidate resume metadata table
+    await db.query(
+      `INSERT INTO candidate_resumes (id, seeker_id, file_name, file_size_bytes, mime_type, storage_path) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [`res_${js.id}`, js.id, `${js.id}_resume.pdf`, 3984588, 'application/pdf', js.resume_url]
     );
   }
 
-  // 5. Seed Job Postings
+  // 6. Seed Job Postings
   const jobPostings = [
     {
       id: 'posting_stripe_1',
@@ -408,7 +435,7 @@ Requirements:
     );
   }
 
-  // 6. Seed Referral Request
+  // 7. Seed Referral Request
   const referralRequests = [
     {
       id: 'req_1',
@@ -429,7 +456,7 @@ Requirements:
     );
   }
 
-  // 7. Seed Notifications
+  // 8. Seed Notifications
   await db.query(
     `INSERT INTO notifications (id, user_id, type, title, message, payload) VALUES ($1, $2, $3, $4, $5, $6)`,
     [
