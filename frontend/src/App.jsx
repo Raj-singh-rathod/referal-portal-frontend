@@ -236,7 +236,14 @@ export default function App() {
       body: formData
     });
 
-    const updateData = await updateRes.json();
+    const updateText = await updateRes.text();
+    let updateData;
+    try {
+      updateData = JSON.parse(updateText);
+    } catch(e) {
+      throw new Error('Upload size exceeded Nginx limit. Please ensure file is a valid PDF under 5MB.');
+    }
+
     if (!updateRes.ok) throw new Error(updateData.error || 'Failed to process resume');
 
     // Step 2: Submit referral request to insider
@@ -249,7 +256,14 @@ export default function App() {
       body: JSON.stringify({ jobPostingId })
     });
 
-    const reqData = await reqRes.json();
+    const reqText = await reqRes.text();
+    let reqData;
+    try {
+      reqData = JSON.parse(reqText);
+    } catch(e) {
+      throw new Error('Referral request error.');
+    }
+
     if (!reqRes.ok) throw new Error(reqData.error || 'Failed to submit referral request');
 
     alert('Free Referral Request & PDF resume submitted successfully!');
