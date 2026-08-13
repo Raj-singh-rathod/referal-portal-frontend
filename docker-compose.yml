@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: referal_postgres
+    restart: always
     environment:
       POSTGRES_USER: referal_user
       POSTGRES_PASSWORD: referal_password
@@ -17,12 +18,14 @@ services:
   redis:
     image: redis:7-alpine
     container_name: referal_redis
+    restart: always
     ports:
       - "6379:6379"
 
   ollama:
     image: ollama/ollama:latest
     container_name: referal_ollama
+    restart: always
     ports:
       - "11434:11434"
     volumes:
@@ -33,9 +36,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: referal_backend
+    restart: always
     environment:
       PORT: 5000
-      NODE_ENV: development
+      NODE_ENV: production
       DATABASE_URL: postgres://referal_user:referal_password@postgres:5432/referal_db
       REDIS_URL: redis://redis:6379
       OLLAMA_URL: http://ollama:11434
@@ -52,8 +56,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: referal_frontend
+    restart: always
     ports:
-      - "3000:3000"
+      - "80:80"
     depends_on:
       - backend
 
