@@ -21,6 +21,8 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
 
   if (!isOpen) return null;
 
+  const isEmployeeMode = role === 'employee';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -55,10 +57,23 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
         
         {/* Top Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <h2 className="text-xl font-extrabold text-white">
-            {isLoginTab ? 'Welcome Back!' : role === 'employee' ? 'Join as Give Referral (Insider/HR)' : 'Join as Take Referral (Job Seeker)'}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+          <div className="flex items-center space-x-2.5">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+              isEmployeeMode ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+            }`}>
+              {isEmployeeMode ? <Briefcase className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+            </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-white">
+                {isLoginTab ? 'Sign In to ReferralConnect' : isEmployeeMode ? 'Give Referral (Insider / HR)' : 'Take Referral (Job Seeker)'}
+              </h2>
+              <p className="text-xs text-slate-400">
+                {isLoginTab ? 'Access your account' : isEmployeeMode ? 'Post jobs & refer candidates' : 'Request free employee referrals'}
+              </p>
+            </div>
+          </div>
+
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1">✕</button>
         </div>
 
         {/* Tab Switcher */}
@@ -84,40 +99,6 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Register role selector */}
-          {!isLoginTab && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Select Account Goal</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole('employee')}
-                  className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    role === 'employee'
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <Briefcase className="w-4 h-4 text-indigo-400" />
-                  <span>Give Referral (Insider/HR)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole('job_seeker')}
-                  className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    role === 'job_seeker'
-                      ? 'bg-emerald-600/20 border-emerald-500 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <UserCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Take Referral (Seeker)</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {!isLoginTab && (
             <div>
@@ -145,10 +126,12 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
             />
           </div>
 
-          {!isLoginTab && (
+          {/* Mandatory Phone Number for Job Seeker */}
+          {!isLoginTab && !isEmployeeMode && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Phone Number <span className="text-emerald-400">*</span>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+                <span>Phone Number</span>
+                <span className="text-emerald-400 text-[11px] font-medium">Required for Job Seekers</span>
               </label>
               <input
                 type="tel"
@@ -173,8 +156,8 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
             />
           </div>
 
-          {/* Role specific fields */}
-          {!isLoginTab && role === 'employee' && (
+          {/* Employee/HR specific fields */}
+          {!isLoginTab && isEmployeeMode && (
             <>
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Company</label>
@@ -205,9 +188,13 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initia
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all mt-2"
+            className={`w-full py-3 rounded-xl font-bold text-xs shadow-lg transition-all mt-2 text-white ${
+              isEmployeeMode
+                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 shadow-indigo-600/30'
+                : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 shadow-emerald-600/30'
+            }`}
           >
-            {loading ? 'Authenticating...' : isLoginTab ? 'Sign In' : 'Create Free Account'}
+            {loading ? 'Authenticating...' : isLoginTab ? 'Sign In' : isEmployeeMode ? 'Register as Insider / HR' : 'Register as Job Seeker'}
           </button>
         </form>
 

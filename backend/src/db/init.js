@@ -99,6 +99,19 @@ const initDb = async () => {
     `);
   }
 
+  // Automatic Migration for existing Postgres/SQLite databases
+  try {
+    await db.query(`ALTER TABLE users ADD COLUMN phone VARCHAR(50);`);
+  } catch (e) {}
+
+  try {
+    await db.query(`ALTER TABLE job_seekers ADD COLUMN phone VARCHAR(50);`);
+  } catch (e) {}
+
+  try {
+    await db.query(`ALTER TABLE job_seekers ADD COLUMN location VARCHAR(255);`);
+  } catch (e) {}
+
   // Check if seed data exists
   const existingUsers = await db.getAll('SELECT * FROM users LIMIT 1');
   if (existingUsers.length > 0) {
