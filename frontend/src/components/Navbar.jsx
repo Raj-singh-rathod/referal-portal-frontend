@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { UserCheck, Shield, Briefcase, Bell, LogIn, LogOut, Sparkles, CheckCircle2, User, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { UserCheck, Shield, Briefcase, Bell, LogIn, LogOut, Sparkles, ChevronDown, HandHand } from 'lucide-react';
 
 export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAuth, onLogout, notifications = [], onMarkNotifRead }) {
   const [showNotifDrawer, setShowNotifDrawer] = useState(false);
   const unreadCount = notifications.filter(n => !n.read_at).length;
 
   return (
-    <nav className="sticky top-0 z-50 glass-card border-b border-slate-800 bg-[#0b0f19]/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 glass-card border-b border-slate-800 bg-[#0b0f19]/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
           {/* Brand Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('feed')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('landing')}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
@@ -25,72 +25,84 @@ export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAut
             </div>
           </div>
 
-          {/* Navigation Links based on role */}
-          <div className="hidden md:flex items-center space-x-1">
+          {/* Core Navigation Links */}
+          <div className="hidden md:flex items-center space-x-2">
+            
+            {/* Take Referral Option (Job Seekers) */}
             <button
               onClick={() => setActiveTab('feed')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
                 activeTab === 'feed'
-                  ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              Match Feed (Refer.me)
+              <UserCheck className="w-4 h-4 text-emerald-400" />
+              <span>Take Referral (Browse Jobs)</span>
             </button>
 
+            {/* Give Referral Option (Employees / HR) */}
+            <button
+              onClick={() => {
+                if (currentUser && (currentUser.role === 'employee' || currentUser.role === 'admin')) {
+                  setActiveTab('employee_dashboard');
+                } else {
+                  onOpenAuth('employee');
+                }
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                activeTab === 'employee_dashboard'
+                  ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Briefcase className="w-4 h-4 text-indigo-400" />
+              <span>Give Referral (Post & Screen Talent)</span>
+            </button>
+
+            {/* Seeker Specific Tabs */}
             {currentUser && currentUser.role === 'job_seeker' && (
               <>
                 <button
                   onClick={() => setActiveTab('seeker_profile')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                     activeTab === 'seeker_profile'
-                      ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                      ? 'bg-slate-800 text-indigo-400 border border-slate-700'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  My Resume & Profile
+                  My Resume & AI Profile
                 </button>
+
                 <button
                   onClick={() => setActiveTab('seeker_tracker')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                     activeTab === 'seeker_tracker'
-                      ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                      ? 'bg-slate-800 text-emerald-400 border border-slate-700'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  My Referral Status
+                  Referral Status Tracker
                 </button>
               </>
             )}
 
-            {currentUser && currentUser.role === 'employee' && (
-              <button
-                onClick={() => setActiveTab('employee_dashboard')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'employee_dashboard'
-                    ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                }`}
-              >
-                Insider Dashboard & Pipeline
-              </button>
-            )}
-
+            {/* Admin Portal Tab */}
             {currentUser && currentUser.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('admin_portal')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                   activeTab === 'admin_portal'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Admin Verification Portal
+                Admin Verification
               </button>
             )}
           </div>
 
-          {/* User Section & Notifications */}
+          {/* User Profile & Notifications */}
           <div className="flex items-center space-x-3">
 
             {/* Notification Bell */}
@@ -108,7 +120,7 @@ export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAut
                   )}
                 </button>
 
-                {/* Notifications Dropdown Drawer */}
+                {/* Notifications Drawer */}
                 {showNotifDrawer && (
                   <div className="absolute right-0 mt-3 w-80 sm:w-96 glass-card rounded-2xl p-4 shadow-2xl z-50 border border-slate-700/80">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -139,9 +151,6 @@ export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAut
                               )}
                             </div>
                             <p className="text-[11px] text-slate-300 mt-1">{notif.message}</p>
-                            <span className="text-[9px] text-slate-500 mt-1 block">
-                              {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
                           </div>
                         ))
                       )}
@@ -151,7 +160,7 @@ export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAut
               </div>
             )}
 
-            {/* Auth Buttons / Current Profile info */}
+            {/* Auth Buttons */}
             {currentUser ? (
               <div className="flex items-center space-x-3 bg-slate-900/80 p-1.5 pl-3 pr-2 rounded-2xl border border-slate-800">
                 <img
@@ -162,7 +171,7 @@ export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAut
                 <div className="text-left hidden sm:block">
                   <p className="text-xs font-semibold text-slate-100">{currentUser.name}</p>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300">
-                    {currentUser.role.replace('_', ' ')}
+                    {currentUser.role === 'employee' ? 'Insider / HR' : currentUser.role.replace('_', ' ')}
                   </span>
                 </div>
                 <button
@@ -175,11 +184,11 @@ export default function Navbar({ currentUser, activeTab, setActiveTab, onOpenAut
               </div>
             ) : (
               <button
-                onClick={onOpenAuth}
+                onClick={() => onOpenAuth('job_seeker')}
                 className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-105"
               >
                 <LogIn className="w-4 h-4" />
-                <span>Sign In / Sign Up</span>
+                <span>Sign In / Register</span>
               </button>
             )}
 

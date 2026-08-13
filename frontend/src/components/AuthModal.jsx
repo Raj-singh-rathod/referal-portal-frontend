@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
-import { LogIn, UserPlus, Building2, User, Sparkles, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LogIn, UserPlus, Building2, User, Sparkles, X, Briefcase, UserCheck } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, onLogin, onRegister, companies = [] }) {
+export default function AuthModal({ isOpen, onClose, onLogin, onRegister, initialRole = 'job_seeker', companies = [] }) {
   const [isLoginTab, setIsLoginTab] = useState(true);
-  const [role, setRole] = useState('job_seeker');
+  const [role, setRole] = useState(initialRole);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [companyId, setCompanyId] = useState(companies[0]?.id || 'comp_stripe');
-  const [jobTitle, setJobTitle] = useState('Senior Software Engineer');
-  const [department, setDepartment] = useState('Engineering');
+  const [jobTitle, setJobTitle] = useState('Senior Software Engineer / HR');
+  const [department, setDepartment] = useState('Engineering / Recruitment');
   const [headline, setHeadline] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialRole) setRole(initialRole);
+  }, [initialRole]);
 
   if (!isOpen) return null;
 
@@ -48,7 +52,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, compan
         {/* Top Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <h2 className="text-xl font-extrabold text-white">
-            {isLoginTab ? 'Welcome Back!' : 'Create 100% Free Account'}
+            {isLoginTab ? 'Welcome Back!' : role === 'employee' ? 'Join as Give Referral (Insider/HR)' : 'Join as Take Referral (Job Seeker)'}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
         </div>
@@ -71,7 +75,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, compan
               !isLoginTab ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Create Account
+            Create Free Account
           </button>
         </div>
 
@@ -80,32 +84,32 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, compan
           {/* Register role selector */}
           {!isLoginTab && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Select Account Type</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Select Account Goal</label>
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole('job_seeker')}
-                  className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                    role === 'job_seeker'
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                      : 'bg-slate-900 border-slate-800 text-slate-400'
-                  }`}
-                >
-                  <User className="w-4 h-4 text-indigo-400" />
-                  <span>Job Seeker</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={() => setRole('employee')}
                   className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                     role === 'employee'
+                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
+                      : 'bg-slate-900 border-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 text-indigo-400" />
+                  <span>Give Referral (Insider/HR)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('job_seeker')}
+                  className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                    role === 'job_seeker'
                       ? 'bg-emerald-600/20 border-emerald-500 text-white'
                       : 'bg-slate-900 border-slate-800 text-slate-400'
                   }`}
                 >
-                  <Building2 className="w-4 h-4 text-emerald-400" />
-                  <span>Company Insider</span>
+                  <UserCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Take Referral (Seeker)</span>
                 </button>
               </div>
             </div>
@@ -166,12 +170,12 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister, compan
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Your Job Title at Company</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Your Job Title at Company (HR or Insider Role)</label>
                 <input
                   type="text"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  placeholder="Staff Software Engineer"
+                  placeholder="Technical Recruiter / Staff Engineer"
                   className="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs text-white"
                 />
               </div>

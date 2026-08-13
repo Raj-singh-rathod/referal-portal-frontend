@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import LandingHero from './components/LandingHero';
 import SeekerFeed from './components/SeekerFeed';
 import SeekerProfile from './components/SeekerProfile';
 import SeekerTracker from './components/SeekerTracker';
@@ -12,7 +13,7 @@ import { UserCheck, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('feed');
+  const [activeTab, setActiveTab] = useState('landing'); // 'landing', 'feed', 'seeker_profile', 'seeker_tracker', 'employee_dashboard', 'admin_portal'
   const [feedItems, setFeedItems] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [dashboardItems, setDashboardItems] = useState([]);
@@ -22,6 +23,7 @@ export default function App() {
 
   // Modals
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalRole, setAuthModalRole] = useState('job_seeker');
   const [showJdModal, setShowJdModal] = useState(false);
   const [showAtsModal, setShowAtsModal] = useState(false);
 
@@ -133,6 +135,23 @@ export default function App() {
     } catch (e) {}
   };
 
+  const handleOpenAuth = (role = 'job_seeker') => {
+    setAuthModalRole(role);
+    setShowAuthModal(true);
+  };
+
+  const handleSelectLandingOption = (option) => {
+    if (option === 'give') {
+      if (currentUser && (currentUser.role === 'employee' || currentUser.role === 'admin')) {
+        setActiveTab('employee_dashboard');
+      } else {
+        handleOpenAuth('employee');
+      }
+    } else if (option === 'take') {
+      setActiveTab('feed');
+    }
+  };
+
   // Quick Demo Role Switcher Helper
   const handleQuickSwitchRole = async (email) => {
     try {
@@ -165,6 +184,11 @@ export default function App() {
     if (!res.ok) throw new Error(data.error || 'Login failed');
     localStorage.setItem('referal_token', data.token);
     setCurrentUser(data.user);
+    if (data.user.role === 'employee' || data.user.role === 'admin') {
+      setActiveTab('employee_dashboard');
+    } else {
+      setActiveTab('feed');
+    }
     fetchFeed();
   };
 
@@ -178,13 +202,18 @@ export default function App() {
     if (!res.ok) throw new Error(data.error || 'Registration failed');
     localStorage.setItem('referal_token', data.token);
     setCurrentUser(data.user);
+    if (data.user.role === 'employee' || data.user.role === 'admin') {
+      setActiveTab('employee_dashboard');
+    } else {
+      setActiveTab('feed');
+    }
     fetchFeed();
   };
 
   const handleLogout = () => {
     localStorage.removeItem('referal_token');
     setCurrentUser(null);
-    setActiveTab('feed');
+    setActiveTab('landing');
   };
 
   // Seeker actions
@@ -315,27 +344,27 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center space-x-2 text-indigo-400 font-semibold">
             <UserCheck className="w-4 h-4 text-emerald-400" />
-            <span>Instant Role Switcher (Development Testing):</span>
+            <span>Quick Role Testing Toolbar:</span>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => handleQuickSwitchRole('david.kim@gmail.com')}
-              className="px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold"
+              className="px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold"
             >
-              Job Seeker (David Kim)
+              Take Referral (David Kim)
             </button>
             <button
               onClick={() => handleQuickSwitchRole('alex.chen@stripe.com')}
-              className="px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold"
+              className="px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold"
             >
-              Stripe Insider (Alex Chen)
+              Give Referral (Stripe Alex Chen / HR)
             </button>
             <button
               onClick={() => handleQuickSwitchRole('sarah.jenkins@google.com')}
               className="px-2.5 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold"
             >
-              Google Insider (Sarah Jenkins)
+              Give Referral (Google Sarah / HR)
             </button>
             <button
               onClick={() => handleQuickSwitchRole('admin@referalportal.com')}
@@ -352,7 +381,7 @@ export default function App() {
         currentUser={currentUser}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenAuth={() => setShowAuthModal(true)}
+        onOpenAuth={handleOpenAuth}
         onLogout={handleLogout}
         notifications={notifications}
         onMarkNotifRead={handleMarkNotifRead}
@@ -360,6 +389,13 @@ export default function App() {
 
       {/* Dynamic Tab Content */}
       <main className="flex-1">
+        {activeTab === 'landing' && (
+          <LandingHero
+            onSelectOption={handleSelectLandingOption}
+            currentUser={currentUser}
+          />
+        )}
+
         {activeTab === 'feed' && (
           <SeekerFeed
             feedItems={feedItems}
@@ -398,7 +434,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800 py-8 text-center text-xs text-slate-500 mt-12 glass-card">
-        <p>© 2026 ReferralConnect — Completely Free Employee Referral Matching Platform.</p>
+        <p>© 2026 ReferralConnect — Completely Free Employee Referral & AI Screening Platform.</p>
         <p className="mt-1">Zero Paywalls for Seekers or Insiders • Greenhouse & Lever ATS Enabled</p>
       </footer>
 
@@ -408,6 +444,7 @@ export default function App() {
         onClose={() => setShowAuthModal(false)}
         onLogin={handleLogin}
         onRegister={handleRegister}
+        initialRole={authModalRole}
         companies={companies}
       />
 
