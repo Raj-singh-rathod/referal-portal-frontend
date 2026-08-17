@@ -10,9 +10,14 @@ build/
 
 # Database & Environment
 *.db
+*.db-shm
+*.db-wal
 backend/src/db/referal.db
+backend/src/db/referal_store.json
+backend/uploads/
 .env
 .env.local
+.agents/
 
 # IDE & OS
 .DS_Store

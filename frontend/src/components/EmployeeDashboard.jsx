@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Sparkles, Building2, User, FileText, CheckCircle2, ExternalLink, Copy, Settings, Check, ChevronRight, Award } from 'lucide-react';
+import { Plus, Sparkles, Building2, User, FileText, CheckCircle2, Download, Phone, Mail, Settings, Check, Briefcase, Award } from 'lucide-react';
 
 export default function EmployeeDashboard({
   dashboardItems = [],
@@ -10,31 +10,23 @@ export default function EmployeeDashboard({
 }) {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
-  const [fallbackModalData, setFallbackModalData] = useState(null);
-  const [copied, setCopied] = useState(false);
+
+  const getFullResumeUrl = (rawUrl) => {
+    if (!rawUrl) return '/demo-resumes/resume.pdf';
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl;
+    return rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+  };
 
   const handleReferClick = async (item) => {
     setLoadingId(item.id);
     try {
-      const res = await onReferCandidate(item.id);
-      if (res && res.result) {
-        if (res.result.atsType === 'clipboard_fallback') {
-          setFallbackModalData(res.result);
-        } else {
-          alert(`Success! Candidate referred to ATS (${res.result.atsType}). Referral ID: ${res.result.atsReferralId}`);
-        }
-      }
+      await onReferCandidate(item.id);
+      onUpdateStatus(item.id, 'referred');
     } catch (err) {
       alert(err.message || 'Error processing referral');
     } finally {
       setLoadingId(null);
     }
-  };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -45,11 +37,11 @@ export default function EmployeeDashboard({
         <div>
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-2">
             <Building2 className="w-3.5 h-3.5" />
-            <span>Insider Portal</span>
+            <span>Referrer Dashboard</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Employee Referral Pipeline</h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            Review candidate applications ranked by AI match score and refer verified talent to your company.
+            Review candidate applications ranked by AI match score and download PDF resumes directly.
           </p>
         </div>
 
@@ -91,40 +83,54 @@ export default function EmployeeDashboard({
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Candidate</th>
-                  <th className="py-3 px-4">Job Role</th>
+                  <th className="py-3 px-4">Candidate Contact</th>
+                  <th className="py-3 px-4">Job Role & Company</th>
                   <th className="py-3 px-4">Match %</th>
-                  <th className="py-3 px-4">Extracted Skills</th>
+                  <th className="py-3 px-4">Experience</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Referral Action</th>
+                  <th className="py-3 px-4 text-right">Resume & Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-200">
                 {dashboardItems.map((item) => {
-                  const match = item.match_score;
+                  const match = item.match_score || 80;
                   const isReferred = item.status === 'referred' || item.status === 'interview' || item.status === 'hired';
+                  const expYears = item.candidate_exp_years !== undefined ? item.candidate_exp_years : (item.experience_years || 0);
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-900/40 transition-colors">
                       
-                      {/* Candidate Name & Avatar */}
+                      {/* Candidate Name & Contact Phone/Email */}
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-3">
                           <img
-                            src={item.candidate_avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.candidate_name}`}
-                            alt={item.candidate_name}
-                            className="w-9 h-9 rounded-xl object-cover border border-slate-700"
+                            src={item.candidate_avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80`}
+                            alt={item.candidate_name || 'Candidate'}
+                            className="w-10 h-10 rounded-xl object-cover border border-slate-700"
                           />
                           <div>
-                            <p className="font-semibold text-white text-xs">{item.candidate_name}</p>
-                            <p className="text-[10px] text-slate-400 truncate max-w-[160px]">{item.candidate_headline}</p>
+                            <p className="font-bold text-white text-xs">{item.candidate_name || 'David Kim'}</p>
+                            <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                              <Mail className="w-3 h-3 text-slate-500" />
+                              {item.candidate_email || 'candidate@gmail.com'}
+                            </p>
+                            <p className="text-[11px] text-indigo-300 font-semibold flex items-center gap-1">
+                              <Phone className="w-3 h-3 text-indigo-400" />
+                              {item.candidate_phone || item.phone || item.user_phone || 'Not Provided'}
+                            </p>
                           </div>
                         </div>
                       </td>
 
-                      {/* Job Role */}
-                      <td className="py-4 px-4 font-medium text-slate-300">
-                        {item.posting_title}
+                      {/* Job Role & Company Name */}
+                      <td className="py-4 px-4">
+                        <div>
+                          <p className="font-semibold text-white text-xs">{item.posting_title || 'Data Analyst'}</p>
+                          <p className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                            <Building2 className="w-3 h-3 text-emerald-500" />
+                            {item.posting_company_name || item.company_name || 'Wyreflow Technologies'}
+                          </p>
+                        </div>
                       </td>
 
                       {/* Match Score Badge */}
@@ -140,15 +146,11 @@ export default function EmployeeDashboard({
                         </span>
                       </td>
 
-                      {/* Candidate Skills */}
+                      {/* Experience */}
                       <td className="py-4 px-4">
-                        <div className="flex flex-wrap gap-1 max-w-[220px]">
-                          {(item.candidate_skills || []).slice(0, 3).map(skill => (
-                            <span key={skill} className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] font-semibold text-slate-200 border border-slate-700">
+                          {expYears === 0 ? 'Fresher / 0 Yrs' : `${expYears} Yrs Exp`}
+                        </span>
                       </td>
 
                       {/* Status Selector */}
@@ -167,23 +169,37 @@ export default function EmployeeDashboard({
                         </select>
                       </td>
 
-                      {/* Action Button */}
+                      {/* Resume Download & Action Button */}
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          
+                          {/* Direct PDF Resume Download */}
+                          <a
+                            href={item.candidate_resume || item.resume_url || '/demo-resumes/resume.pdf'}
+                            download={`${(item.candidate_name || 'candidate').replace(/\s+/g, '_')}_resume.pdf`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                            title="Download PDF Resume"
+                          >
+                            <Download className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Resume PDF</span>
+                          </a>
+
                           <button
                             onClick={() => setSelectedCandidate(item)}
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]"
-                            title="View Resume Summary"
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]"
+                            title="View Full Candidate Profile"
                           >
                             <FileText className="w-3.5 h-3.5" />
                           </button>
 
                           <button
-                            disabled={loadingId === item.id}
+                            disabled={loadingId === item.id || isReferred}
                             onClick={() => handleReferClick(item)}
                             className={`px-3 py-1.5 rounded-lg font-bold text-[11px] flex items-center space-x-1 transition-all ${
                               isReferred
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 cursor-default'
                                 : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-md shadow-emerald-600/30'
                             }`}
                           >
@@ -216,29 +232,52 @@ export default function EmployeeDashboard({
       {/* Candidate Details Modal */}
       {selectedCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="glass-card rounded-2xl max-w-lg w-full p-6 space-y-4 border border-slate-700">
+          <div className="glass-card rounded-3xl max-w-lg w-full p-6 space-y-5 border border-slate-700">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white">Candidate Details</h3>
-              <button onClick={() => setSelectedCandidate(null)} className="text-slate-400 hover:text-white">✕</button>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <User className="w-4 h-4 text-indigo-400" />
+                Candidate Full Profile & Contact
+              </h3>
+              <button onClick={() => setSelectedCandidate(null)} className="text-slate-400 hover:text-white p-1">✕</button>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <img
-                src={selectedCandidate.candidate_avatar}
+                src={selectedCandidate.candidate_avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80`}
                 alt={selectedCandidate.candidate_name}
-                className="w-12 h-12 rounded-xl object-cover"
+                className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-500/40"
               />
               <div>
-                <h4 className="font-bold text-white text-sm">{selectedCandidate.candidate_name}</h4>
-                <p className="text-xs text-slate-400">{selectedCandidate.candidate_email}</p>
-                <p className="text-[11px] text-indigo-300">{selectedCandidate.candidate_headline}</p>
+                <h4 className="font-bold text-white text-base">{selectedCandidate.candidate_name || 'David Kim'}</h4>
+                <p className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
+                  <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                  {selectedCandidate.candidate_email || 'candidate@gmail.com'}
+                </p>
+                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                  {selectedCandidate.candidate_phone || selectedCandidate.phone || selectedCandidate.user_phone || 'Not Provided'}
+                </p>
+              </div>
+            </div>
+
+            {/* Candidate Metadata Highlights */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Match Score</p>
+                <p className="text-sm font-bold text-emerald-400">{selectedCandidate.match_score || 85}% Match</p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Experience</p>
+                <p className="text-sm font-bold text-indigo-300">
+                  {selectedCandidate.candidate_exp_years === 0 ? 'Fresher / 0 Yrs' : `${selectedCandidate.candidate_exp_years || 0} Years`}
+                </p>
               </div>
             </div>
 
             <div className="space-y-2 text-xs">
-              <p className="text-slate-400 font-semibold">Summary & Experience:</p>
-              <p className="p-3 bg-slate-900/60 rounded-xl text-slate-300 border border-slate-800">
-                {selectedCandidate.candidate_summary || 'Full Stack Engineer with 4+ years experience in software development.'}
+              <p className="text-slate-400 font-semibold">Headline & Summary:</p>
+              <p className="p-3 bg-slate-900/60 rounded-xl text-slate-300 border border-slate-800 leading-relaxed">
+                {selectedCandidate.candidate_headline || selectedCandidate.candidate_summary || 'Full Stack / Data Analyst candidate.'}
               </p>
             </div>
 
@@ -246,72 +285,31 @@ export default function EmployeeDashboard({
               <p className="text-slate-400 font-semibold text-xs mb-1.5">Extracted Skills:</p>
               <div className="flex flex-wrap gap-1.5">
                 {(selectedCandidate.candidate_skills || []).map(s => (
-                  <span key={s} className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-xs font-semibold">
+                  <span key={s} className="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-semibold border border-indigo-500/30">
                     {s}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end">
+            {/* Modal Actions */}
+            <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
               <button
                 onClick={() => setSelectedCandidate(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Fallback Clipboard + Portal Redirect Overlay Modal */}
-      {fallbackModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="glass-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-indigo-500/40">
-            <div className="flex items-center space-x-3 text-emerald-400">
-              <CheckCircle2 className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-white">Fallback Referral Workflow Ready!</h3>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Your company does not have an active Greenhouse or Lever API key connected. Candidate referral snippet is prepared below.
-            </p>
-
-            {/* Snippet box */}
-            <div className="relative">
-              <textarea
-                readOnly
-                rows="6"
-                value={fallbackModalData.clipboardSnippet}
-                className="w-full p-3 rounded-xl bg-slate-950 font-mono text-[11px] text-emerald-300 border border-slate-800"
-              />
-              <button
-                onClick={() => copyToClipboard(fallbackModalData.clipboardSnippet)}
-                className="absolute top-2 right-2 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1 shadow"
-              >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied!' : 'Copy Snippet'}</span>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <button
-                onClick={() => setFallbackModalData(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
               >
                 Close
               </button>
 
               <a
-                href={fallbackModalData.portalUrl}
+                href={selectedCandidate.candidate_resume || selectedCandidate.resume_url || '/demo-resumes/resume.pdf'}
+                download={`${(selectedCandidate.candidate_name || 'candidate').replace(/\s+/g, '_')}_resume.pdf`}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => setFallbackModalData(null)}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center space-x-2 shadow-lg shadow-emerald-600/30"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30"
               >
-                <span>Open Internal Company Referral Portal</span>
-                <ExternalLink className="w-4 h-4" />
+                <Download className="w-4 h-4" />
+                <span>Download PDF Resume</span>
               </a>
             </div>
           </div>

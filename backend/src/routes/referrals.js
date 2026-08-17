@@ -61,7 +61,7 @@ router.get('/feed', async (req, res) => {
         location: posting.location,
         employment_type: posting.employment_type,
         company: {
-          name: posting.company_name,
+          name: structured.company_name || posting.company_name,
           domain: posting.company_domain,
           ats_type: posting.ats_type,
           portal_url: posting.portal_url
@@ -164,7 +164,7 @@ router.get('/employee-dashboard', requireAuth, requireRole('employee', 'admin'),
     const requests = await db.getAll(`
       SELECT rr.*, 
              jp.title as posting_title, jp.location as posting_location,
-             u.name as candidate_name, u.email as candidate_email, u.avatar_url as candidate_avatar,
+             u.name as candidate_name, u.email as candidate_email, COALESCE(NULLIF(u.phone, ''), NULLIF(js.phone, ''), 'Not Provided') as candidate_phone, u.avatar_url as candidate_avatar,
              js.headline as candidate_headline, js.resume_url as candidate_resume, js.parsed_profile
       FROM referral_requests rr
       JOIN job_postings jp ON rr.job_posting_id = jp.id
@@ -179,6 +179,7 @@ router.get('/employee-dashboard', requireAuth, requireRole('employee', 'admin'),
       try { parsed = JSON.parse(r.parsed_profile); } catch(e){}
       return {
         ...r,
+        candidate_phone: r.candidate_phone || parsed.phone || 'Not Provided',
         candidate_skills: parsed.skills || [],
         candidate_exp_years: parsed.experience_years || 2,
         candidate_summary: parsed.summary || ''

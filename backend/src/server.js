@@ -3,6 +3,9 @@ const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 
+// Load environment variables from root .env or backend/.env
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config();
 
 const initDb = require('./db/init');
@@ -26,8 +29,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static file uploads directory
+// Static file uploads & demo resumes directories
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/demo-resumes', express.static(path.join(__dirname, '../demo-resumes')));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
