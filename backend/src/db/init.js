@@ -119,6 +119,8 @@ const initDb = async () => {
 
   // Automatic Migration for existing PostgreSQL or SQLite databases
   try { await db.query(`ALTER TABLE users ADD COLUMN phone VARCHAR(50);`); } catch (e) {}
+  try { await db.query(`ALTER TABLE users ADD COLUMN reset_token VARCHAR(100);`); } catch (e) {}
+  try { await db.query(`ALTER TABLE users ADD COLUMN reset_token_expires DATETIME;`); } catch (e) {}
   try { await db.query(`ALTER TABLE job_seekers ADD COLUMN phone VARCHAR(50);`); } catch (e) {}
   try { await db.query(`ALTER TABLE job_seekers ADD COLUMN location VARCHAR(255);`); } catch (e) {}
   try { await db.query(`ALTER TABLE job_seekers ADD COLUMN total_experience_years INT DEFAULT 0;`); } catch (e) {}

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db/db');
 const { JWT_SECRET, requireAuth } = require('../middleware/auth');
+const notificationService = require('../services/notificationService');
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
@@ -172,4 +173,88 @@ router.get('/me', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password (Generate 6-digit Reset OTP)
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    const user = await db.getOne('SELECT * FROM users WHERE email = $1', [email]);
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' });
+    }
+
+    // Generate 6-digit OTP code & 15 min expiry
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 15 * 60 * 1000;
+
+    await db.query(
+      `UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3`,
+      [otp, expiresAt, user.id]
+    );
+
+    console.log(`[AUTH] Password reset OTP generated for ${email}: ${otp}`);
+
+    await notificationService.sendNotification({
+      userId: user.id,
+      type: 'PASSWORD_RESET_OTP',
+      title: 'Your Password Reset OTP Code',
+      message: `Your 6-digit verification code to reset your password is: ${otp}. This code is valid for 15 minutes.`,
+      payload: { otp, email }
+    });
+
+    return res.json({
+      message: 'Password reset OTP code generated successfully.',
+      resetOtp: otp
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/reset-password (Verify OTP & Set New Password)
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Email, OTP code, and new password are required.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+
+    const user = await db.getOne('SELECT * FROM users WHERE email = $1', [email]);
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    if (!user.reset_token || user.reset_token !== otp.trim()) {
+      return res.status(400).json({ error: 'Invalid OTP reset code.' });
+    }
+
+    if (user.reset_token_expires && Date.now() > parseInt(user.reset_token_expires, 10)) {
+      return res.status(400).json({ error: 'Reset code has expired. Please request a new one.' });
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    await db.query(
+      `UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2`,
+      [newPasswordHash, user.id]
+    );
+
+    return res.json({
+      message: 'Password has been reset successfully! You can now log in with your new password.'
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+

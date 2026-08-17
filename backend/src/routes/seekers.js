@@ -23,6 +23,8 @@ const upload = multer({
   }
 });
 
+const fs = require('fs');
+
 // POST /api/seekers/resume (Upload PDF resume <= 5MB and parse/update profile)
 router.post('/resume', requireAuth, requireRole('job_seeker'), (req, res) => {
   upload.single('resume')(req, res, async (err) => {
@@ -35,22 +37,33 @@ router.post('/resume', requireAuth, requireRole('job_seeker'), (req, res) => {
 
     try {
       const { name, phone, location, experience_years, headline, bio, manualSkills, resumeText } = req.body;
-
-      let extractedText = resumeText || '';
-      if (req.file) {
-        extractedText = req.file.buffer.toString('utf8');
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
       }
 
-      const parsedProfile = resumeParser.parseResumeText(extractedText);
+      let resumeUrl = '/demo-resumes/resume.pdf';
+      let parsedProfile = {};
+
+      if (req.file) {
+        const safeFilename = `${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const filePath = path.join(uploadsDir, safeFilename);
+        fs.writeFileSync(filePath, req.file.buffer);
+        resumeUrl = `/uploads/${safeFilename}`;
+
+        parsedProfile = await resumeParser.parseResumeBuffer(req.file.buffer);
+      } else {
+        parsedProfile = resumeParser.parseResumeText(resumeText || '');
+      }
 
       // Override with manual inputs if provided by user
-      if (experience_years) {
-        parsedProfile.experience_years = parseInt(experience_years, 10) || parsedProfile.experience_years;
+      if (experience_years !== undefined && experience_years !== '') {
+        parsedProfile.experience_years = parseInt(experience_years, 10);
       }
       if (manualSkills) {
         const skillsArr = typeof manualSkills === 'string' ? manualSkills.split(',').map(s => s.trim()) : manualSkills;
         if (Array.isArray(skillsArr) && skillsArr.length > 0) {
-          parsedProfile.skills = Array.from(new Set([...parsedProfile.skills, ...skillsArr]));
+          parsedProfile.skills = Array.from(new Set([...(parsedProfile.skills || []), ...skillsArr]));
         }
       }
 
@@ -59,24 +72,27 @@ router.post('/resume', requireAuth, requireRole('job_seeker'), (req, res) => {
         return res.status(404).json({ error: 'Job Seeker record not found.' });
       }
 
-      const resumeUrl = req.file ? `/uploads/${Date.now()}_${req.file.originalname}` : '/demo-resumes/resume.pdf';
+      const finalName = name || parsedProfile.name || null;
+      const finalPhone = phone || parsedProfile.phone || null;
 
-      // Update User table if name/phone provided
-      if (name || phone) {
+      // Update User table
+      if (finalName || finalPhone) {
         await db.query(
           `UPDATE users SET name = COALESCE($1, name), phone = COALESCE($2, phone) WHERE id = $3`,
-          [name || null, phone || null, req.user.id]
+          [finalName, finalPhone, req.user.id]
         );
       }
 
       // Update Job Seeker table
+      const totalExpYears = parsedProfile.experience_years !== undefined ? parsedProfile.experience_years : 0;
       await db.query(
-        `UPDATE job_seekers SET headline = COALESCE($1, headline), bio = COALESCE($2, bio), phone = COALESCE($3, phone), location = COALESCE($4, location), resume_url = COALESCE($5, resume_url), parsed_profile = $6 WHERE id = $7`,
-        [headline || null, bio || null, phone || null, location || null, resumeUrl, JSON.stringify(parsedProfile), seeker.id]
+        `UPDATE job_seekers SET headline = COALESCE($1, headline), bio = COALESCE($2, bio), phone = COALESCE($3, phone), location = COALESCE($4, location), total_experience_years = $5, resume_url = $6, parsed_profile = $7 WHERE id = $8`,
+        [headline || null, bio || null, finalPhone, location || 'Remote', totalExpYears, resumeUrl, JSON.stringify(parsedProfile), seeker.id]
       );
 
       return res.json({
         message: 'Resume and profile updated successfully!',
+        resumeUrl,
         parsedProfile
       });
     } catch (error) {

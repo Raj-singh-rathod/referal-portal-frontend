@@ -41,8 +41,28 @@ router.post('/', requireAuth, requireRole('employee', 'admin'), async (req, res)
       emp = firstEmp;
     }
 
+    const parsedFields = typeof structuredFields === 'string' ? JSON.parse(structuredFields) : structuredFields;
+    let companyId = emp ? emp.company_id : 'comp_stripe';
+    const customCompanyName = parsedFields.company_name;
+
+    if (customCompanyName && customCompanyName.trim()) {
+      const cleanName = customCompanyName.trim();
+      const existingComp = await db.getOne('SELECT id FROM companies WHERE LOWER(name) = LOWER($1)', [cleanName]);
+      if (existingComp) {
+        companyId = existingComp.id;
+      } else {
+        const newCompId = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        const domain = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
+        await db.query(
+          `INSERT INTO companies (id, name, domain, portal_url) VALUES ($1, $2, $3, $4)`,
+          [newCompId, cleanName, domain, `https://${domain}`]
+        );
+        companyId = newCompId;
+      }
+    }
+
     const postingId = `posting_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-    const fieldsJson = typeof structuredFields === 'string' ? structuredFields : JSON.stringify(structuredFields);
+    const fieldsJson = JSON.stringify(parsedFields);
 
     await db.query(
       `INSERT INTO job_postings (id, employee_id, company_id, title, location, employment_type, raw_jd_text, structured_fields, status) 
@@ -50,7 +70,7 @@ router.post('/', requireAuth, requireRole('employee', 'admin'), async (req, res)
       [
         postingId,
         emp.id,
-        emp.company_id,
+        companyId,
         title,
         location || 'Remote',
         employmentType || 'Full-time',

@@ -10,9 +10,10 @@ export default function JdPasteParserModal({ isOpen, onClose, onParseJd, onPubli
 
   const [extractedData, setExtractedData] = useState({
     job_title: '',
+    company_name: '',
     required_skills: [],
-    experience_min_years: 2,
-    experience_max_years: 6,
+    experience_min_years: 0,
+    experience_max_years: 2,
     location: 'Remote',
     employment_type: 'Full-time',
     responsibilities: [],
@@ -148,8 +149,19 @@ export default function JdPasteParserModal({ isOpen, onClose, onParseJd, onPubli
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Job Title</label>
                 <input
                   type="text"
-                  value={extractedData.job_title}
+                  value={extractedData.job_title || ''}
                   onChange={(e) => setExtractedData({ ...extractedData, job_title: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl glass-input text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Company Name</label>
+                <input
+                  type="text"
+                  value={extractedData.company_name || ''}
+                  onChange={(e) => setExtractedData({ ...extractedData, company_name: e.target.value })}
+                  placeholder="e.g. Wyreflow Technologies"
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-xs text-white"
                 />
               </div>
@@ -158,7 +170,7 @@ export default function JdPasteParserModal({ isOpen, onClose, onParseJd, onPubli
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Location</label>
                 <input
                   type="text"
-                  value={extractedData.location}
+                  value={extractedData.location || ''}
                   onChange={(e) => setExtractedData({ ...extractedData, location: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-xs text-white"
                 />
@@ -178,7 +190,7 @@ export default function JdPasteParserModal({ isOpen, onClose, onParseJd, onPubli
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Employment Type</label>
                 <input
                   type="text"
-                  value={extractedData.employment_type}
+                  value={extractedData.employment_type || ''}
                   onChange={(e) => setExtractedData({ ...extractedData, employment_type: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-xl glass-input text-xs text-white"
                 />
